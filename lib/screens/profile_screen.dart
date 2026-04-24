@@ -13,6 +13,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _name = 'Savaşçı';
   int _xp = 0;
   bool _isLoading = true;
+  final TextEditingController _apiKeyController = TextEditingController();
 
   @override
   void initState() {
@@ -23,12 +24,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _loadData() async {
     final prefs = await SharedPreferences.getInstance();
     int xp = await StorageService.getXP();
+    String? storedKey = await StorageService.getApiKey();
+    
     if (mounted) {
       setState(() {
         _name = prefs.getString('user_name') ?? 'Savaşçı';
         _xp = xp;
+        _apiKeyController.text = storedKey ?? '';
         _isLoading = false;
       });
+    }
+  }
+
+  void _saveApiKey() async {
+    await StorageService.setApiKey(_apiKeyController.text);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('API Anahtarı güncellendi! AI Koçun canlanıyor...')),
+      );
     }
   }
 
@@ -43,8 +56,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final currentTitle = StorageService.getCurrentTitle(_xp);
     final currentLevel = StorageService.getLevel(_xp);
-    
-    // Sonsuz level için bar hesaplama (her 100 XP bir level)
     final currentLevelXP = currentLevel * 100;
     final nextLevelXP = (currentLevel + 1) * 100;
     final progress = ((_xp - currentLevelXP) / 100).clamp(0.0, 1.0);
@@ -78,9 +89,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
               ...StorageService.allTitles.map((t) => _buildTitleItem(t)),
               const SizedBox(height: 40),
+              
+              // GİZLİ API KEY AYARI
+              const Divider(color: Colors.white10),
+              const SizedBox(height: 20),
+              _buildApiKeySettings(),
+              const SizedBox(height: 40),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildApiKeySettings() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('SİSTEM AYARLARI', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _apiKeyController,
+            obscureText: true,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+            decoration: InputDecoration(
+              labelText: 'Gemini API Key',
+              labelStyle: const TextStyle(color: Colors.white24),
+              filled: true,
+              fillColor: Colors.black.withOpacity(0.2),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.save, color: Colors.cyanAccent, size: 20),
+                onPressed: _saveApiKey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text('AI Koçun aktif olması için anahtar gereklidir.', style: TextStyle(color: Colors.white12, fontSize: 9)),
+        ],
       ),
     );
   }

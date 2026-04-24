@@ -255,6 +255,17 @@ class StorageService {
     return jsonList.map((j) => HabitModel.fromMap(jsonDecode(j))).toList();
   }
 
+  // API KEY YÖNETİMİ
+  static Future<void> setApiKey(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('gemini_api_key', key);
+  }
+
+  static Future<String?> getApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('gemini_api_key');
+  }
+
   static Future<void> injectTestData() async {
     final prefs = await SharedPreferences.getInstance();
     DateTime today = DateTime.now();
